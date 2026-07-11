@@ -1,0 +1,229 @@
+{
+  "name": "Research Agent - Web Search & Synthesis",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Summarize the following search results into a clear, well-organized research briefing. Include key points and cite sources with their URLs.\n\nSearch results:\n{{ JSON.stringify($json.results) }}"
+            }
+          ]
+        },
+        "simplify": "={{ true }}",
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e4a0ed83-02b9-4061-a366-1b9ba9e7bdcd",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Efn072XL0U6XAHF1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"query\": \"{{ $json.Question }}\",\n    \"search_depth\": \"basic\",\n    \"max_results\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1247e88c-5500-4233-857b-6f4afb8b4342",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "73y5a5g6CIYIfDMQ",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Research Question",
+        "formDescription": "Enter a topic to research",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Question"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "f930114d-8389-492e-87a7-1bd3beb7d220",
+      "name": "On form submission",
+      "webhookId": "877143de-70ad-4dae-8c6b-2aa5e1521907"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d036354e-cd95-4f09-b2eb-31d8d4ad255e",
+              "name": "summary",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "fdde5c61-ebb8-4af9-947a-d0af35d7cf1a",
+              "name": "question",
+              "value": "={{ $('On form submission').item.json.Question }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        0
+      ],
+      "id": "fb4ce651-a540-4d39-b48f-b7db9fea7254",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "396ab3d7-f3a4-8057-8608-f2db1a2553ef",
+          "mode": "list",
+          "cachedResultName": "Research Reports/table",
+          "cachedResultUrl": "https://app.notion.com/p/396ab3d7f3a480578608f2db1a2553ef"
+        },
+        "title": "={{ $json.question }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Summary |rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.summary.slice(0, 1990) }}",
+                    "annotationUi": {}
+                  },
+                  {
+                    "text": "={{ $json.summary.slice(1990, 3980) }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Date|date",
+              "date": "={{ $now }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "43d88110-4f99-48b2-a49e-29323d21ccac",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "PyJo6HJUqaGk0GAp",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "090edab1-e0e2-4e44-b002-5afaeb3748a2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a694d97f7748fa7579134e52bd4c9227ede306a5bbf265c40425a60038a7bef"
+  },
+  "nodeGroups": [],
+  "id": "9VCuU1Ts5oAmYv5L",
+  "tags": []
+}

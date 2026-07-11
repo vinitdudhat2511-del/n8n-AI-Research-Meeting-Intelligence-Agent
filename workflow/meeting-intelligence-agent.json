@@ -1,0 +1,301 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f55436ec-0c1d-41e3-b084-839af882aeec",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ea7f6664-fcd3-4567-8744-8fe7c7c7491c",
+              "name": "transcript",
+              "value": "Team Sync — n8n Automation Project July 8, 2026, 3:00 PM Vinit: Okay let's get started. Quick update on the research agent — it's working end to end now. Form submission, Tavily search, Gemini summary, and it's saving to Notion. Priya: Nice. Did you handle the character limit issue we talked about last week? Vinit: Yeah, fixed that by chunking the summary into multiple text blocks. Should support up to 8000 characters now. Priya: Good. What about the meeting intelligence half? Vinit: Starting on that today. Plan is to take a transcript, extract action items and decisions using Gemini, and push it to Notion or Slack. Priya: Can we also get it to flag open questions? Sometimes in meetings we say \"we'll figure that out later\" and it just gets forgotten. Vinit: Yeah that's a good addition. I'll add that as a third category. Priya: One more thing — for the credit risk pipeline, we need to finalize the model card before Friday. Can you own that? Vinit: Sure, I'll have the model card done by Thursday. Priya: Great. Also, we haven't decided yet whether to use Pinecone or Supabase for the vector store. Let's revisit that next week once we see how much data we're actually storing. Vinit: Agreed, let's not lock that in yet. Priya: Last thing — good work on the IEEE paper reference list. That's done, right? Vinit: Yep, that's finalized. No action needed there. Priya: Perfect. I think that covers everything for today.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b2dfeb49-7299-48e4-aa3b-3aa27c10fedf",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a meeting intelligence assistant. Analyze the following meeting transcript and extract structured information.\n\nReturn ONLY valid JSON in this exact format, with no extra text or markdown:\n{\n  \"decisions\": [\"decision 1\", \"decision 2\"],\n  \"action_items\": [{\"task\": \"task description\", \"owner\": \"person name\", \"deadline\": \"deadline if mentioned, else null\"}],\n  \"open_questions\": [\"question 1\", \"question 2\"]\n}\n\nTranscript:\n{{ $json.transcript }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "fdcfc84a-49a8-4c1a-87a9-a612e4a84922",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Efn072XL0U6XAHF1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "296d8a83-03b5-48fb-922d-2056e60265e6",
+              "name": "=extracted_json",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "61bad92c-88f5-4b73-933b-ee8faacc7302",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = JSON.parse($input.first().json.extracted_json);\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "a75500ce-71a4-42d9-bf13-5a17ebbcb868",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=action_items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "87a9a34b-1104-4d6f-a2d4-1e00f92f667d",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "397ab3d7-f3a4-80fd-add2-db08a11b3fb0",
+          "mode": "list",
+          "cachedResultName": "Meeting Actions",
+          "cachedResultUrl": "https://app.notion.com/p/397ab3d7f3a480fdadd2db08a11b3fb0"
+        },
+        "title": "={{ $json.task }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Task |title",
+              "title": "={{ $json.task }}"
+            },
+            {
+              "key": "Owner|rich_text",
+              "textContent": "={{ $json.owner }}"
+            },
+            {
+              "key": "Deadline|rich_text",
+              "textContent": "={{ $json.deadline || \"\" }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "Not started"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "9076c617-742e-4588-9263-1ea31b072a3f",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "PyJo6HJUqaGk0GAp",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "39aab3d7-f3a4-8068-b597-d9f7213a7458",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "https://app.notion.com/p/39aab3d7f3a48068b597d9f7213a7458"
+        },
+        "title": "={{ \"Meeting - \" + $now.format('MMM dd, yyyy HH:mm') }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Decisions |rich_text",
+              "textContent": "={{ $json.decisions.map(d => \"• \" + d).join(\"\\n\") }}"
+            },
+            {
+              "key": "Open Questions |rich_text",
+              "textContent": "={{ $json.open_questions.map(q => \"• \" + q).join(\"\\n\") }}"
+            },
+            {
+              "key": "Date|date",
+              "date": "={{ $now }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        208
+      ],
+      "id": "e5e88e99-2fbe-45f8-99cd-6b952d608c55",
+      "name": "Create a database page1",
+      "credentials": {
+        "notionApi": {
+          "id": "PyJo6HJUqaGk0GAp",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a database page1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0870e5a0-8ffc-42ed-91a8-776f5e065e96",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a694d97f7748fa7579134e52bd4c9227ede306a5bbf265c40425a60038a7bef"
+  },
+  "nodeGroups": [],
+  "id": "G4YGRTUq0z2aWj4x",
+  "tags": []
+}
