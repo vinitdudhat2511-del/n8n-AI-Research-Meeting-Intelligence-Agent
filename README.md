@@ -44,4 +44,9 @@ Parses meeting transcripts using LLM-based structured extraction to automaticall
 [Add your Loom/YouTube link here]
 
 ## Screenshots
-[Add 2-3 screenshots of the workflow canvas + Notion output here]
+
+### Meeting Intelligence Agent Canvas
+![Meeting Intelligence Agent Canvas](screenshots/meeting-agent-canvas.png)
+
+### Research Agent Canvas
+![Research Agent Canvas](screenshots/research-agent-canvas.png)
