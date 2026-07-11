@@ -40,8 +40,6 @@ Parses meeting transcripts using LLM-based structured extraction to automaticall
 4. Create the required Notion databases (see `/docs/notion-schema.md`)
 5. Update node references to point to your own Notion database IDs
 
-## Demo
-[Add your Loom/YouTube link here]
 
 ## Screenshots
 
