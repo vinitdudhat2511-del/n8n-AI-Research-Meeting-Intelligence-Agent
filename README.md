@@ -1,33 +1,47 @@
 # n8n AI Research & Meeting Intelligence Agent
 
-This repository contains n8n workflow configurations for an AI-powered Research Agent and a Meeting Intelligence Agent. These workflows utilize Google Gemini and the Tavily Search API to automate research synthesis and meeting transcript analysis.
+An automation system built in n8n that combines two AI-powered agents to streamline research and meeting follow-ups — reducing manual work in synthesizing information and tracking action items.
 
-## Workflows Included
+## Overview
 
-### 1. Research Agent — Web Search & Synthesis (`workflow/research-agent.json`)
-An automated research assistant triggered via a form submission.
-- **Trigger**: n8n Form Trigger (collects research queries/questions).
-- **Search Integration**: Fetches relevant results using the Tavily Search API.
-- **Synthesis**: Utilizes Google Gemini to summarize search results, compile a comprehensive research briefing, and cite references.
-- **Output**: Generates formatted research summaries containing key points and source URLs.
+This project consists of two independent but complementary workflows:
 
-### 2. Meeting Intelligence Agent (`workflow/meeting-intelligence-agent.json`)
-A workflow that analyzes meeting transcripts to extract structured key insights.
-- **Input**: Accepts meeting transcript data.
-- **AI Processing**: Instructs Google Gemini to parse transcripts and identify:
-  - **Decisions**: Key agreements and conclusions reached.
-  - **Action Items**: Tasks with assigned owners and deadlines.
-  - **Open Questions**: Pending questions or unresolved issues.
-- **Output**: Returns a clean, structured JSON format for downstream integrations (e.g., Slack notifications, Notion database entries, Jira tasks).
+### 1. Research Agent
+Takes a user-submitted research question via a web form, performs real-time web search, and uses an LLM to synthesize the results into a structured, cited research briefing — automatically saved to a Notion database.
 
----
+**Flow:** Form Input → Tavily Web Search → Gemini Synthesis → Notion Storage
 
-## How to Import These Workflows into n8n
+### 2. Meeting Intelligence Agent
+Parses meeting transcripts using LLM-based structured extraction to automatically identify decisions, actionable tasks (with owners and deadlines), and open questions — then routes them into trackable Notion databases.
 
-1. Download or clone this repository.
-2. In your n8n workspace, click **Add Workflow** -> **Import from File**.
-3. Choose either `research-agent.json` or `meeting-intelligence-agent.json` from the `workflow` folder.
-4. Configure the required credentials:
-   - **Google Gemini (PaLM) API**: For LLM-based summary and extraction.
-   - **Tavily Search API**: Header Authentication for search integration.
-5. Save and activate the workflows.
+**Flow:** Transcript Input → Gemini Extraction → JSON Parsing → Split into two branches:
+- Action items → Notion (Meeting Actions database, one row per task)
+- Decisions & Open Questions → Notion (Meeting Notes database)
+
+## Tech Stack
+- **Automation/Orchestration:** n8n (self-hosted via Docker)
+- **AI/LLM:** Google Gemini API
+- **Search API:** Tavily
+- **Data Storage:** Notion API
+- **Infrastructure:** Docker
+
+## Key Technical Challenges Solved
+- **Notion API text limits:** Notion's rich_text fields cap at 2,000 characters. Built a chunking mechanism to split longer AI-generated summaries across multiple text blocks without losing content.
+- **Dynamic array handling:** Used n8n's Split Out node to convert a single LLM response containing multiple action items into individual trackable Notion database rows.
+- **Structured LLM output:** Prompted Gemini to return strict JSON for reliable downstream parsing, then validated/parsed it via a custom Code node.
+
+## Setup
+1. Clone this repo
+2. Import the workflow JSON files (`/workflows`) into your n8n instance
+3. Set up credentials for:
+   - Google Gemini API
+   - Tavily API (Header Auth)
+   - Notion API
+4. Create the required Notion databases (see `/docs/notion-schema.md`)
+5. Update node references to point to your own Notion database IDs
+
+## Demo
+[Add your Loom/YouTube link here]
+
+## Screenshots
+[Add 2-3 screenshots of the workflow canvas + Notion output here]
